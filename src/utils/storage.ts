@@ -1,35 +1,29 @@
 import { UserProfile, SchoolLevel, CustomGame } from '../types';
 
-const STORAGE_KEY = 'mathsquest_profile_v1';
+const STORAGE_KEY = 'mathsquest_profile_v2';
 
 export const getInitialXpHistory = () => [
-  { date: 'Day 1', xp: 20, questionsSolved: 3 },
-  { date: 'Day 2', xp: 45, questionsSolved: 7 },
-  { date: 'Day 3', xp: 60, questionsSolved: 10 },
-  { date: 'Day 4', xp: 85, questionsSolved: 15 },
-  { date: 'Day 5', xp: 95, questionsSolved: 18 },
-  { date: 'Day 6', xp: 110, questionsSolved: 21 },
-  { date: 'Today', xp: 120, questionsSolved: 24 }
+  { date: 'Start', xp: 0, questionsSolved: 0 }
 ];
 
 export const DEFAULT_PROFILE: UserProfile = {
-  name: 'Mona',
+  name: 'Learner',
   level: 'Primary 5',
   avatar: '👧🏾',
-  xp: 120,
-  nairaCoins: 250,
-  stars: 12,
-  streak: 1,
-  lastPlayedDate: new Date().toISOString().split('T')[0],
+  xp: 0,
+  nairaCoins: 0,
+  stars: 0,
+  streak: 0,
+  lastPlayedDate: '',
   unlockedAdventureStages: 1,
-  adventureStars: { 1: 3 },
+  adventureStars: {},
   unlockedAvatars: ['mona_hero', 'scholar_boy', 'scholar_girl'],
   unlockedPowerups: {
-    fiftyFifty: 3,
-    extraTime: 2,
-    shield: 2
+    fiftyFifty: 0,
+    extraTime: 0,
+    shield: 0
   },
-  badges: ['first_win'],
+  badges: [],
   xpHistory: getInitialXpHistory(),
   customGames: [
     {
@@ -62,6 +56,11 @@ export const DEFAULT_PROFILE: UserProfile = {
 export function loadProfile(): UserProfile {
   if (typeof window === 'undefined') return DEFAULT_PROFILE;
   try {
+    // If legacy v1 demo profile is detected in localStorage, clear it
+    if (localStorage.getItem('mathsquest_profile_v1')) {
+      localStorage.removeItem('mathsquest_profile_v1');
+    }
+
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
       saveProfile(DEFAULT_PROFILE);

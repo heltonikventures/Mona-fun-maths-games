@@ -427,7 +427,7 @@ export const MathsAdventure: React.FC<MathsAdventureProps> = ({
                     onClick={() => onOpenTutor(currentQ, selectedAnswer)}
                     className="flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 font-bold transition"
                   >
-                    <span>👩🏾‍🏫 Ask Teacher Folake for Step-by-Step</span>
+                    <span>👨🏾‍🏫 Ask Teacher Helton for Step-by-Step</span>
                   </button>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed">

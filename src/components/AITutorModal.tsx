@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Sparkles, BookOpen, CheckCircle } from 'lucide-react';
 import { Question, SchoolLevel } from '../types';
-import { askTeacherFolake } from '../utils/api';
+import { askTeacherHelton } from '../utils/api';
 
 interface AITutorModalProps {
   isOpen: boolean;
@@ -28,7 +28,7 @@ export const AITutorModal: React.FC<AITutorModalProps> = ({
     setLoading(true);
     setExplanation('');
 
-    askTeacherFolake(question.question, studentAnswer, question.correctAnswer, level)
+    askTeacherHelton(question.question, studentAnswer, question.correctAnswer, level)
       .then((res) => {
         if (isMounted) {
           setExplanation(res);
@@ -57,15 +57,15 @@ export const AITutorModal: React.FC<AITutorModalProps> = ({
           <div className="flex items-center gap-3">
             <div className="flex items-center -space-x-2">
               <div className="w-10 h-10 rounded-full bg-emerald-700/80 flex items-center justify-center text-xl shadow-inner border border-emerald-400/40 z-10">
-                👩🏾‍🏫
+                👨🏾‍🏫
               </div>
               <div className="w-9 h-9 rounded-full bg-pink-700/80 flex items-center justify-center text-lg shadow-inner border border-pink-400/40">
                 👧🏾
               </div>
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white font-game">Mona & Teacher Folake's Maths Clinic</h3>
-              <p className="text-xs text-emerald-200">Friendly AI Maths Guide • Nigerian & Global Curriculum</p>
+              <h3 className="text-lg font-bold text-white font-game">Teacher Helton's Maths Clinic</h3>
+              <p className="text-xs text-emerald-200">AI Mathematics Coach Helton • Step-by-Step Guidance</p>
             </div>
           </div>
           <button 
@@ -95,14 +95,14 @@ export const AITutorModal: React.FC<AITutorModalProps> = ({
           {loading ? (
             <div className="flex flex-col items-center justify-center py-10 text-center gap-3">
               <div className="w-10 h-10 border-3 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-slate-400 font-medium">Teacher Folake is preparing your step-by-step solution...</p>
+              <p className="text-sm text-slate-400 font-medium">Teacher Helton is preparing your step-by-step solution...</p>
             </div>
           ) : (
             <div className="space-y-4">
               <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3">
                 <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
                   <Sparkles size={16} />
-                  <span>Step-by-Step Breakdown</span>
+                  <span>Step-by-Step Breakdown from Teacher Helton</span>
                 </div>
                 <div className="whitespace-pre-line text-slate-300 text-sm">
                   {explanation}
@@ -128,7 +128,7 @@ export const AITutorModal: React.FC<AITutorModalProps> = ({
             onClick={onClose}
             className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-md transition"
           >
-            Got It, Thanks Teacher!
+            Got It, Thanks Teacher Helton!
           </button>
         </div>
       </div>

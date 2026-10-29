@@ -356,7 +356,7 @@ export const TreasureHunt: React.FC<TreasureHuntProps> = ({
                 onClick={() => onOpenTutor(activeQuestion, selectedAnswer)}
                 className="text-xs text-emerald-400 hover:text-emerald-300 font-bold"
               >
-                👩🏾‍🏫 Ask Teacher Folake
+                👨🏾‍🏫 Ask Teacher Helton
               </button>
 
               {isAnswered && (

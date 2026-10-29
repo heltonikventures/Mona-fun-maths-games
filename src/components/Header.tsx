@@ -70,10 +70,10 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Stars Counter (from Mona Maths) */}
           <div 
             className="flex items-center gap-1 bg-yellow-950/50 border border-yellow-500/40 px-2.5 py-1.5 rounded-xl text-yellow-300 font-extrabold text-xs sm:text-sm shadow-xs"
-            title={`${profile.stars || 12} Total Adventure Stars`}
+            title={`${profile.stars || 0} Total Adventure Stars`}
           >
             <span className="text-amber-300">⭐</span>
-            <span>{profile.stars || 12}</span>
+            <span>{profile.stars || 0}</span>
           </div>
 
           {/* Naira Coins */}

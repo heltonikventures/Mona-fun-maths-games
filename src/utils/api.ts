@@ -50,7 +50,7 @@ export async function fetchGameQuestions(
   return selected.map((q, idx) => ({ ...q, id: `fallback-${Date.now()}-${idx}` }));
 }
 
-export async function askTeacherFolake(
+export async function askTeacherHelton(
   question: string,
   studentAnswer: string | null,
   correctAnswer: string,
@@ -73,5 +73,8 @@ export async function askTeacherFolake(
     console.warn('Tutor API fetch failed:', err);
   }
 
-  return `Well done for your effort! Let's solve this clearly:\n\nThe correct answer is **${correctAnswer}**.\nBreak the calculation down step-by-step: write out what you have, apply the formula or operation, and check your work twice. Keep practicing, maths champion!`;
+  return `Great effort! Teacher Helton is here to help you solve this:\n\nThe correct answer is **${correctAnswer}**.\nBreak the problem down step-by-step: write out what you know, apply the formula or operation, and double-check your arithmetic. You've got this, maths hero!`;
 }
+
+// Backward-compatible alias
+export const askTeacherFolake = askTeacherHelton;

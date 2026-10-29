@@ -226,7 +226,7 @@ export const DailyChallenge: React.FC<DailyChallengeProps> = ({
               onClick={() => onOpenTutor(currentQ, selectedAnswer)}
               className="text-xs text-emerald-400 hover:text-emerald-300 font-bold"
             >
-              👩🏾‍🏫 Ask Teacher Folake for Guidance
+              👨🏾‍🏫 Ask Teacher Helton for Guidance
             </button>
 
             {isAnswered && (

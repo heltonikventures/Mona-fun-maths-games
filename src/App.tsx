@@ -486,7 +486,7 @@ export default function App() {
         )}
       </main>
 
-      {/* Floating Teacher Folake Helper Shortcut */}
+      {/* Floating Teacher Helton Helper Shortcut */}
       <button
         onClick={() => openTutorForQuestion(
           {
@@ -494,14 +494,14 @@ export default function App() {
             options: [],
             correctAnswer: "Break the problem down step-by-step and write out the values clearly.",
             explanation: "Always identify the given amounts, determine whether to add, subtract, multiply, or divide, and double-check your arithmetic.",
-            hint: "Take it one step at a time!"
+            hint: "Take it one step at a time! Teacher Helton is here to help."
           },
           null
         )}
         className="fixed bottom-4 right-4 z-30 flex items-center gap-2 px-4 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-2xl hover:scale-105 active:scale-95 transition"
       >
-        <span className="text-lg">👩🏾‍🏫</span>
-        <span className="hidden sm:inline">Ask Teacher Folake</span>
+        <span className="text-lg">👨🏾‍🏫</span>
+        <span className="hidden sm:inline">Ask Teacher Helton</span>
       </button>
 
       {/* Interactive Global Modals */}

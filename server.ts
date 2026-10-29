@@ -234,16 +234,16 @@ app.post('/api/tutor-explain', async (req: Request, res: Response) => {
 
   if (ai) {
     try {
-      const prompt = `You are "Teacher Folake", an encouraging, brilliant Nigerian mathematics teacher on Maths Quest.
+      const prompt = `You are "Teacher Helton", an encouraging, brilliant mathematics coach and teacher on Maths Quest.
 A student in ${level} is asking for help with this problem:
 Question: "${question}"
 Student's answer: "${studentAnswer || 'Not answered yet'}"
 Correct answer: "${correctAnswer}"
 
 Give a kind, energetic explanation (max 3-4 short paragraphs):
-1. Acknowledge their effort with a warm Nigerian teaching expression (e.g., "Well done for trying!", "Oya, let's break this down step-by-step!", "Maths is fun when you see the pattern!").
+1. Acknowledge their effort with a warm, motivating greeting from Teacher Helton (e.g., "Well done for giving it your best shot! I am Teacher Helton, let's break this down step-by-step!", "Maths is fun when you see the pattern!").
 2. Show the crystal-clear calculation step-by-step.
-3. Give one quick pro-tip or memory trick to remember for next time.
+3. Give one quick pro-tip or memory trick from Teacher Helton to remember for next time.
 Keep formatting clean with clear lines.`;
 
       const response = await ai.models.generateContent({
@@ -260,12 +260,12 @@ Keep formatting clean with clear lines.`;
   // Fallback tutor explanation
   return res.json({
     success: true,
-    explanation: `Well done for giving it your best shot! Let's solve it together:
+    explanation: `Well done for giving it your best shot! Teacher Helton is here to help you solve it:
     
 The correct answer is **${correctAnswer}**.
 When approaching this question, first identify what values are given and what is being asked. Work through the calculation carefully: check your units, watch for plus/minus signs, and double check your arithmetic.
 
-Keep your chin up and keep practicing! Every maths champion solved thousands of problems to become great!`
+Keep your chin up and keep practicing! Every maths champion solves problems step-by-step to become great!`
   });
 });
 

@@ -20,14 +20,19 @@ export const LearningDashboard: React.FC<LearningDashboardProps> = ({ profile, c
   const levelInfo = calculateLevelInfo(profile.xp);
 
   // Prepare chart data from profile history
-  const chartData = (profile.xpHistory && profile.xpHistory.length > 0)
+  const rawHistory = (profile.xpHistory && profile.xpHistory.length > 0)
     ? profile.xpHistory
-    : getInitialXpHistory();
+    : [{ date: 'Start', xp: 0, questionsSolved: 0 }];
+
+  // If only 1 point exists, add a secondary point so Recharts draws an active line
+  const chartData = rawHistory.length === 1
+    ? [...rawHistory, { date: 'Current', xp: profile.xp, questionsSolved: rawHistory[0].questionsSolved || 0 }]
+    : rawHistory;
 
   const firstXp = chartData[0]?.xp || 0;
   const currentTotalXp = profile.xp;
   const xpGainedRecent = Math.max(0, currentTotalXp - firstXp);
-  const totalQuestionsSolved = chartData[chartData.length - 1]?.questionsSolved || Math.round(profile.xp / 5);
+  const totalQuestionsSolved = chartData[chartData.length - 1]?.questionsSolved || 0;
 
   // Custom Chart Tooltip
   const CustomTooltip = ({ active, payload }: any) => {

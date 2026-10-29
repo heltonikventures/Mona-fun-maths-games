@@ -313,7 +313,7 @@ export const MathsBasketball: React.FC<MathsBasketballProps> = ({
               onClick={() => onOpenTutor(currentQ, null)}
               className="text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1"
             >
-              👩🏾‍🏫 Need shooting guidance? Ask Teacher Folake
+              👨🏾‍🏫 Need shooting guidance? Ask Teacher Helton
             </button>
             <span className="text-slate-400">Class: {profile.level}</span>
           </div>
