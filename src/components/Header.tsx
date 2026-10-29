@@ -10,6 +10,7 @@ interface HeaderProps {
   onOpenShop: () => void;
   onOpenBadges: () => void;
   onOpenProfile: () => void;
+  onOpenInstall?: () => void;
   onGoHome?: () => void;
 }
 
@@ -19,6 +20,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenShop,
   onOpenBadges,
   onOpenProfile,
+  onOpenInstall,
   onGoHome
 }) => {
   const [soundOn, setSoundOn] = useState<boolean>(soundManager.isEnabled());
@@ -137,6 +139,19 @@ export const Header: React.FC<HeaderProps> = ({
             >
               {soundOn ? <Volume2 size={17} className="text-emerald-400" /> : <VolumeX size={17} className="text-slate-500" />}
             </button>
+
+            {/* Install on Android Button */}
+            {onOpenInstall && (
+              <button
+                onClick={onOpenInstall}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-green-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs shadow-md shadow-emerald-950/40 border border-emerald-400/40 transition hover:scale-105 active:scale-95 cursor-pointer"
+                title="Install Maths Quest on your Android Phone (Web App / APK)"
+              >
+                <span className="text-sm">📱</span>
+                <span className="hidden md:inline font-bold">Install on Android</span>
+                <span className="md:hidden font-bold">Install</span>
+              </button>
+            )}
 
             {/* Learning Dashboard Button */}
             <button

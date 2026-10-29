@@ -22,6 +22,7 @@ import { QuestShopModal } from './components/QuestShopModal';
 import { ProfileModal } from './components/ProfileModal';
 import { BadgesModal } from './components/BadgesModal';
 import { LearningDashboard } from './components/LearningDashboard';
+import { InstallAndroidModal } from './components/InstallAndroidModal';
 
 // Game Mode Components
 import { MathsAdventure } from './components/games/MathsAdventure';
@@ -48,6 +49,7 @@ export default function App() {
   const [shopOpen, setShopOpen] = useState<boolean>(false);
   const [profileOpen, setProfileOpen] = useState<boolean>(false);
   const [badgesOpen, setBadgesOpen] = useState<boolean>(false);
+  const [installOpen, setInstallOpen] = useState<boolean>(false);
 
   // AI Tutor Modal
   const [tutorOpen, setTutorOpen] = useState<boolean>(false);
@@ -180,6 +182,7 @@ export default function App() {
         onOpenShop={() => setShopOpen(true)}
         onOpenBadges={() => setBadgesOpen(true)}
         onOpenProfile={() => setProfileOpen(true)}
+        onOpenInstall={() => setInstallOpen(true)}
         onGoHome={() => setActiveGame(null)}
       />
 
@@ -301,19 +304,26 @@ export default function App() {
                 <div className="flex flex-wrap items-center gap-3 mt-6">
                   <button
                     onClick={() => handleSelectGame('adventure')}
-                    className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-extrabold text-sm shadow-xl hover:scale-102 active:scale-98 transition"
+                    className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-extrabold text-sm shadow-xl hover:scale-102 active:scale-98 transition cursor-pointer"
                   >
                     <Play size={18} className="fill-slate-950" /> Start Quest Adventure
                   </button>
                   <button
                     onClick={() => handleSelectGame('daily')}
-                    className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700 text-white font-bold text-sm shadow-md transition"
+                    className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700 text-white font-bold text-sm shadow-md transition cursor-pointer"
                   >
                     <Flame size={17} className="text-orange-500 fill-orange-500" /> Today's Daily Quest
                   </button>
                   <button
+                    onClick={() => setInstallOpen(true)}
+                    className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-sm shadow-lg shadow-emerald-950/60 border border-emerald-400/40 hover:scale-102 active:scale-98 transition cursor-pointer"
+                  >
+                    <span>📱</span>
+                    <span>Install on Android Phone</span>
+                  </button>
+                  <button
                     onClick={() => setProfileOpen(true)}
-                    className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-indigo-950/70 hover:bg-indigo-900 border border-indigo-600/50 text-indigo-200 font-bold text-sm transition"
+                    className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-indigo-950/70 hover:bg-indigo-900 border border-indigo-600/50 text-indigo-200 font-bold text-sm transition cursor-pointer"
                   >
                     <span>📊 Learning Dashboard</span>
                   </button>
@@ -323,6 +333,38 @@ export default function App() {
               {/* Decorative Background Elements */}
               <div className="absolute right-4 bottom-2 text-8xl sm:text-9xl opacity-20 select-none pointer-events-none hidden sm:block">
                 🦅
+              </div>
+            </div>
+
+            {/* Android Phone Installation Banner Card */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-950/80 via-slate-900 to-teal-950/80 border-2 border-emerald-500/40 p-5 sm:p-6 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-3xl shadow-lg shadow-emerald-500/20 shrink-0">
+                  📱
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-black text-white text-base sm:text-lg">
+                      Install Maths Quest on Your Android Device
+                    </h3>
+                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                      Direct APK / Web App
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-slate-300 mt-1">
+                    Play full-screen without address bars, works completely offline, and saves data storage (&lt; 3MB). Verified for all Android phones!
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
+                <button
+                  onClick={() => setInstallOpen(true)}
+                  className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-400 to-green-500 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/30 hover:scale-105 active:scale-95 transition cursor-pointer"
+                >
+                  <span>⬇️</span>
+                  <span>Install / Download Now</span>
+                </button>
               </div>
             </div>
 
@@ -486,23 +528,34 @@ export default function App() {
         )}
       </main>
 
-      {/* Floating Teacher Helton Helper Shortcut */}
-      <button
-        onClick={() => openTutorForQuestion(
-          {
-            question: "How do I solve maths word problems involving Naira and everyday market calculations?",
-            options: [],
-            correctAnswer: "Break the problem down step-by-step and write out the values clearly.",
-            explanation: "Always identify the given amounts, determine whether to add, subtract, multiply, or divide, and double-check your arithmetic.",
-            hint: "Take it one step at a time! Teacher Helton is here to help."
-          },
-          null
-        )}
-        className="fixed bottom-4 right-4 z-30 flex items-center gap-2 px-4 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-2xl hover:scale-105 active:scale-95 transition"
-      >
-        <span className="text-lg">👨🏾‍🏫</span>
-        <span className="hidden sm:inline">Ask Teacher Helton</span>
-      </button>
+      {/* Floating Action Buttons */}
+      <div className="fixed bottom-4 right-4 z-30 flex flex-col sm:flex-row items-end sm:items-center gap-2">
+        <button
+          onClick={() => setInstallOpen(true)}
+          className="flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-slate-900/90 hover:bg-slate-800 text-emerald-400 font-extrabold text-xs shadow-2xl border border-emerald-500/50 hover:scale-105 active:scale-95 transition backdrop-blur-md cursor-pointer"
+          title="Install on Android Phone"
+        >
+          <span className="text-base">📱</span>
+          <span>Install on Android</span>
+        </button>
+
+        <button
+          onClick={() => openTutorForQuestion(
+            {
+              question: "How do I solve maths word problems involving Naira and everyday market calculations?",
+              options: [],
+              correctAnswer: "Break the problem down step-by-step and write out the values clearly.",
+              explanation: "Always identify the given amounts, determine whether to add, subtract, multiply, or divide, and double-check your arithmetic.",
+              hint: "Take it one step at a time! Teacher Helton is here to help."
+            },
+            null
+          )}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-2xl hover:scale-105 active:scale-95 transition cursor-pointer"
+        >
+          <span className="text-lg">👨🏾‍🏫</span>
+          <span className="hidden sm:inline">Ask Teacher Helton</span>
+        </button>
+      </div>
 
       {/* Interactive Global Modals */}
       <ScratchpadModal
@@ -536,6 +589,11 @@ export default function App() {
         question={tutorQuestion}
         studentAnswer={tutorStudentAnswer}
         level={profile.level}
+      />
+
+      <InstallAndroidModal
+        isOpen={installOpen}
+        onClose={() => setInstallOpen(false)}
       />
     </div>
   );
