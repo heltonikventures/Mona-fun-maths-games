@@ -1,0 +1,6 @@
+{
+  "name": "MATHS QUEST – Learn Maths Through Games",
+  "description": "Interactive educational maths game with Nigerian cultural context, diverse game modes, class levels from Primary 1 to SS3, and AI-powered dynamic question generation and explanations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
