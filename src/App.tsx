@@ -36,6 +36,10 @@ import { BossBattle } from './components/games/BossBattle';
 import { DailyChallenge } from './components/games/DailyChallenge';
 import { BuildYourOwnGame } from './components/games/BuildYourOwnGame';
 
+import { AuthProvider } from './context/AuthContext';
+import { LoginModal } from './components/LoginModal';
+import { saveProfileToFirestore } from './firebase/db';
+
 export default function App() {
   const [profile, setProfile] = useState<UserProfile>(loadProfile);
   const [activeGame, setActiveGame] = useState<GameModeId | null>(null);
@@ -50,6 +54,7 @@ export default function App() {
   const [profileOpen, setProfileOpen] = useState<boolean>(false);
   const [badgesOpen, setBadgesOpen] = useState<boolean>(false);
   const [installOpen, setInstallOpen] = useState<boolean>(false);
+  const [loginOpen, setLoginOpen] = useState<boolean>(false);
 
   // AI Tutor Modal
   const [tutorOpen, setTutorOpen] = useState<boolean>(false);
@@ -60,9 +65,15 @@ export default function App() {
     soundManager.init();
   }, []);
 
+  const handleCloudProfileLoaded = (cloudProfile: UserProfile) => {
+    setProfile(cloudProfile);
+    saveProfile(cloudProfile);
+  };
+
   const handleUpdateProfile = (updated: UserProfile) => {
     setProfile(updated);
     saveProfile(updated);
+    saveProfileToFirestore(updated).catch(() => {});
   };
 
   const openTutorForQuestion = (q: Question, studentAns: string | null) => {
@@ -181,18 +192,20 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-indigo-500 selection:text-white">
-      {/* Sticky Global Navigation */}
-      <Header
-        profile={profile}
-        onOpenScratchpad={() => setScratchpadOpen(true)}
-        onOpenShop={() => setShopOpen(true)}
-        onOpenBadges={() => setBadgesOpen(true)}
-        onOpenProfile={() => setProfileOpen(true)}
-        onOpenInstall={() => setInstallOpen(true)}
-        onOpenTutor={handleOpenGeneralTutor}
-        onGoHome={() => setActiveGame(null)}
-      />
+    <AuthProvider currentProfile={profile} onProfileLoaded={handleCloudProfileLoaded}>
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-indigo-500 selection:text-white">
+        {/* Sticky Global Navigation */}
+        <Header
+          profile={profile}
+          onOpenScratchpad={() => setScratchpadOpen(true)}
+          onOpenShop={() => setShopOpen(true)}
+          onOpenBadges={() => setBadgesOpen(true)}
+          onOpenProfile={() => setProfileOpen(true)}
+          onOpenInstall={() => setInstallOpen(true)}
+          onOpenTutor={handleOpenGeneralTutor}
+          onOpenLogin={() => setLoginOpen(true)}
+          onGoHome={() => setActiveGame(null)}
+        />
 
       {/* Main Content Area */}
       <main className="flex-1 pb-16">
@@ -337,6 +350,13 @@ export default function App() {
                     <span>Install on Android</span>
                   </button>
                   <button
+                    onClick={() => setLoginOpen(true)}
+                    className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-extrabold text-sm shadow-md transition hover:scale-102 active:scale-98 cursor-pointer"
+                  >
+                    <span>🔐</span>
+                    <span>Sign In & Cloud Save</span>
+                  </button>
+                  <button
                     onClick={() => setProfileOpen(true)}
                     className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-indigo-950/70 hover:bg-indigo-900 border border-indigo-600/50 text-indigo-200 font-bold text-sm transition cursor-pointer"
                   >
@@ -348,6 +368,38 @@ export default function App() {
               {/* Decorative Background Elements */}
               <div className="absolute right-4 bottom-2 text-8xl sm:text-9xl opacity-20 select-none pointer-events-none hidden sm:block">
                 🦅
+              </div>
+            </div>
+
+            {/* Cloud Database & Leaderboard Banner Card */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-950/80 via-purple-950/60 to-slate-900 border-2 border-indigo-500/40 p-5 sm:p-6 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-3xl shadow-lg shadow-indigo-500/20 shrink-0">
+                  ☁️
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-black text-white text-base sm:text-lg">
+                      Cloud Database & Global Leaderboard
+                    </h3>
+                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
+                      Firebase Firestore & Auth
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-slate-300 mt-1">
+                    Sign in with Google to automatically back up your stars, XP, and Naira coins, and showcase your rank on the live Maths Quest leaderboard!
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
+                <button
+                  onClick={() => setLoginOpen(true)}
+                  className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-black text-sm shadow-xl shadow-indigo-500/30 hover:scale-105 active:scale-95 transition cursor-pointer"
+                >
+                  <span>🏆</span>
+                  <span>Leaderboard & Account</span>
+                </button>
               </div>
             </div>
 
@@ -582,6 +634,7 @@ export default function App() {
         onClose={() => setProfileOpen(false)}
         profile={profile}
         onUpdateProfile={handleUpdateProfile}
+        onOpenLogin={() => setLoginOpen(true)}
       />
 
       <BadgesModal
@@ -603,6 +656,13 @@ export default function App() {
         isOpen={installOpen}
         onClose={() => setInstallOpen(false)}
       />
+
+      <LoginModal
+        isOpen={loginOpen}
+        onClose={() => setLoginOpen(false)}
+        profile={profile}
+      />
     </div>
+  </AuthProvider>
   );
 }

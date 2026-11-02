@@ -6,6 +6,15 @@
 let audioCtx: AudioContext | null = null;
 let soundEnabled = true;
 
+try {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('mathsquest_sound');
+    if (saved !== null) {
+      soundEnabled = saved === '1';
+    }
+  }
+} catch (e) {}
+
 function getAudioContext(): AudioContext | null {
   if (typeof window === 'undefined') return null;
   if (!audioCtx) {
@@ -22,11 +31,24 @@ function getAudioContext(): AudioContext | null {
 
 export const soundManager = {
   isEnabled: () => soundEnabled,
+  setEnabled: (enabled: boolean) => {
+    soundEnabled = enabled;
+    try {
+      localStorage.setItem('mathsquest_sound', soundEnabled ? '1' : '0');
+    } catch (e) {}
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('mathsquest:sound-toggle', { detail: { enabled: soundEnabled } }));
+    }
+    return soundEnabled;
+  },
   toggle: () => {
     soundEnabled = !soundEnabled;
     try {
       localStorage.setItem('mathsquest_sound', soundEnabled ? '1' : '0');
     } catch (e) {}
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('mathsquest:sound-toggle', { detail: { enabled: soundEnabled } }));
+    }
     return soundEnabled;
   },
   init: () => {

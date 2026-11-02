@@ -1,0 +1,185 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Learner profile storing level, XP, naira coins, stars, streak, inventory, and badges.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Unique Firebase Authentication UID matching request.auth.uid"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name of the learner",
+          "maxLength": 60
+        },
+        "avatar": {
+          "type": "string",
+          "description": "Avatar emoji character",
+          "maxLength": 10
+        },
+        "level": {
+          "type": "string",
+          "description": "School level, e.g., Primary 1-6, JSS 1-3, SS 1-3",
+          "maxLength": 30
+        },
+        "xp": {
+          "type": "integer",
+          "description": "Total accumulated experience points"
+        },
+        "nairaCoins": {
+          "type": "integer",
+          "description": "Naira coin balance for the quest shop"
+        },
+        "stars": {
+          "type": "integer",
+          "description": "Total stars collected across adventure islands"
+        },
+        "streak": {
+          "type": "integer",
+          "description": "Current consecutive active day streak"
+        },
+        "lastActiveDate": {
+          "type": "string",
+          "description": "ISO date string of last active session",
+          "maxLength": 40
+        },
+        "badges": {
+          "type": "array",
+          "description": "List of unlocked badge identifiers"
+        },
+        "inventory": {
+          "type": "array",
+          "description": "List of purchased shop item identifiers"
+        },
+        "gamesPlayed": {
+          "type": "integer",
+          "description": "Total game sessions completed"
+        },
+        "correctAnswers": {
+          "type": "integer",
+          "description": "Total correct math answers answered"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the record was last saved",
+          "maxLength": 40
+        }
+      },
+      "required": ["userId", "name", "level", "xp", "nairaCoins"]
+    },
+    "GameScore": {
+      "title": "GameScore",
+      "description": "Historical game session score and leaderboard record.",
+      "type": "object",
+      "properties": {
+        "scoreId": {
+          "type": "string",
+          "description": "Unique score identifier"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Author UID who played the game"
+        },
+        "userName": {
+          "type": "string",
+          "description": "Display name of the player",
+          "maxLength": 60
+        },
+        "userAvatar": {
+          "type": "string",
+          "description": "Emoji avatar of the player",
+          "maxLength": 10
+        },
+        "level": {
+          "type": "string",
+          "description": "School class level during the session",
+          "maxLength": 30
+        },
+        "gameMode": {
+          "type": "string",
+          "description": "Game mode played (e.g. adventure, speed, basketball, ninja)",
+          "maxLength": 40
+        },
+        "score": {
+          "type": "integer",
+          "description": "Final score earned in game"
+        },
+        "xpEarned": {
+          "type": "integer",
+          "description": "XP gained from the game"
+        },
+        "nairaEarned": {
+          "type": "integer",
+          "description": "Naira coins rewarded"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "ISO timestamp of game completion",
+          "maxLength": 40
+        }
+      },
+      "required": ["scoreId", "userId", "gameMode", "score"]
+    },
+    "CustomQuiz": {
+      "title": "CustomQuiz",
+      "description": "User created custom quiz from the Build Your Own Game mode.",
+      "type": "object",
+      "properties": {
+        "quizId": {
+          "type": "string",
+          "description": "Unique quiz identifier"
+        },
+        "creatorId": {
+          "type": "string",
+          "description": "UID of the quiz creator"
+        },
+        "creatorName": {
+          "type": "string",
+          "description": "Display name of the author",
+          "maxLength": 60
+        },
+        "title": {
+          "type": "string",
+          "description": "Quiz title",
+          "maxLength": 100
+        },
+        "topic": {
+          "type": "string",
+          "description": "Math topic covered",
+          "maxLength": 50
+        },
+        "level": {
+          "type": "string",
+          "description": "Intended school class level",
+          "maxLength": 30
+        },
+        "questions": {
+          "type": "array",
+          "description": "Array of question objects created by the student"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp when created",
+          "maxLength": 40
+        }
+      },
+      "required": ["quizId", "creatorId", "title", "topic"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Learner profile document owned by the authenticated student."
+    },
+    "/scores/{scoreId}": {
+      "schema": "GameScore",
+      "description": "Public game scores and leaderboard entries."
+    },
+    "/customQuizzes/{quizId}": {
+      "schema": "CustomQuiz",
+      "description": "Community user-generated math challenges created by students."
+    }
+  }
+}

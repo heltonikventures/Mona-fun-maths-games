@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  X, GraduationCap, RotateCcw, Download, BarChart3 
+  X, GraduationCap, RotateCcw, Download, BarChart3, Cloud 
 } from 'lucide-react';
 
 import { UserProfile, SchoolLevel } from '../types';
@@ -8,6 +8,7 @@ import { SCHOOL_LEVELS } from '../data/curriculum';
 import { saveProfile, DEFAULT_PROFILE } from '../utils/storage';
 import { soundManager } from '../utils/audio';
 import { LearningDashboard } from './LearningDashboard';
+import { useAuth } from '../context/AuthContext';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ interface ProfileModalProps {
   profile: UserProfile;
   onUpdateProfile: (updated: UserProfile) => void;
   initialTab?: 'dashboard' | 'settings';
+  onOpenLogin?: () => void;
 }
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({
@@ -22,8 +24,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   onClose,
   profile,
   onUpdateProfile,
-  initialTab = 'dashboard'
+  initialTab = 'dashboard',
+  onOpenLogin
 }) => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'settings'>(initialTab);
   const [name, setName] = useState(profile.name);
   const [level, setLevel] = useState<SchoolLevel>(profile.level);
@@ -157,6 +161,30 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Cloud Database Sync Status */}
+              <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-indigo-500/30 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <Cloud size={14} className="text-indigo-400 shrink-0" />
+                    <span>Cloud Database & Login Status</span>
+                  </p>
+                  <p className="text-[11px] text-slate-300 mt-0.5 truncate">
+                    {user ? `Logged in: ${user.email} • Cloud Synced` : 'Guest Mode. Sign in to save in cloud database & leaderboard.'}
+                  </p>
+                </div>
+                {onOpenLogin && (
+                  <button
+                    onClick={() => {
+                      onClose();
+                      onOpenLogin();
+                    }}
+                    className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shrink-0 transition cursor-pointer shadow-sm"
+                  >
+                    {user ? 'Account' : 'Sign In'}
+                  </button>
+                )}
               </div>
 
               {/* Backup & Reset Actions */}

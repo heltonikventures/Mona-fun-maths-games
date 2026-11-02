@@ -4,6 +4,8 @@ import { UserProfile } from '../types';
 import { calculateLevelInfo } from '../utils/storage';
 import { soundManager } from '../utils/audio';
 
+import { useAuth } from '../context/AuthContext';
+
 interface HeaderProps {
   profile: UserProfile;
   onOpenScratchpad: () => void;
@@ -12,6 +14,7 @@ interface HeaderProps {
   onOpenProfile: () => void;
   onOpenInstall?: () => void;
   onOpenTutor?: () => void;
+  onOpenLogin?: () => void;
   onGoHome?: () => void;
 }
 
@@ -23,8 +26,10 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenProfile,
   onOpenInstall,
   onOpenTutor,
+  onOpenLogin,
   onGoHome
 }) => {
+  const { user } = useAuth();
   const [soundOn, setSoundOn] = useState<boolean>(soundManager.isEnabled());
   const levelInfo = calculateLevelInfo(profile.xp);
 
@@ -65,11 +70,19 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Player Stats (Stars, Coins, Sync Status, Streak) */}
         <div className="flex items-center gap-2 sm:gap-2.5">
           {/* Cloud Sync Status (from Mona Maths) */}
-          <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-[11px] font-semibold text-slate-300">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Synced</span>
+          <button
+            onClick={onOpenLogin}
+            className={`hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition cursor-pointer ${
+              user
+                ? 'bg-emerald-950/60 hover:bg-emerald-900/60 border-emerald-500/40 text-emerald-300'
+                : 'bg-slate-800/80 hover:bg-slate-700 border-slate-700 text-slate-300'
+            }`}
+            title={user ? `Signed in as ${user.displayName || user.email} • Click to view cloud data` : 'Click to Sign In with Google and save progress to Cloud'}
+          >
+            <span className={`w-2 h-2 rounded-full ${user ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+            <span>{user ? 'Cloud Synced' : 'Cloud Backup'}</span>
             <span>☁️</span>
-          </div>
+          </button>
 
           {/* Stars Counter (from Mona Maths) */}
           <div 
@@ -178,10 +191,39 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="hidden sm:inline">Dashboard</span>
             </button>
 
+            {/* Account / Login Button */}
+            {user ? (
+              <button
+                onClick={onOpenLogin}
+                className="flex items-center gap-1.5 pl-1.5 pr-2.5 py-1 bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-500/50 rounded-xl transition cursor-pointer"
+                title="Account Synced • Click to view Leaderboard and Account"
+              >
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt="User" className="w-5 h-5 rounded-full object-cover border border-emerald-400" />
+                ) : (
+                  <span className="text-sm">👑</span>
+                )}
+                <span className="text-xs font-bold text-emerald-300 hidden md:inline-block max-w-[80px] truncate">
+                  {user.displayName?.split(' ')[0] || profile.name}
+                </span>
+              </button>
+            ) : (
+              onOpenLogin && (
+                <button
+                  onClick={onOpenLogin}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-extrabold text-xs shadow-md border border-indigo-400/40 transition hover:scale-105 active:scale-95 cursor-pointer"
+                  title="Sign in with Google to save progress in cloud database & leaderboard"
+                >
+                  <span className="text-xs">🔐</span>
+                  <span className="hidden sm:inline font-bold">Sign In</span>
+                </button>
+              )
+            )}
+
             {/* Profile Avatar Button */}
             <button
               onClick={onOpenProfile}
-              className="flex items-center gap-1.5 pl-1.5 pr-2.5 py-1 bg-indigo-900/40 hover:bg-indigo-900/70 border border-indigo-600/50 rounded-xl transition"
+              className="flex items-center gap-1.5 pl-1.5 pr-2.5 py-1 bg-indigo-900/40 hover:bg-indigo-900/70 border border-indigo-600/50 rounded-xl transition cursor-pointer"
               title="Manage Profile & Class Level"
             >
               <span className="text-lg">{profile.avatar}</span>

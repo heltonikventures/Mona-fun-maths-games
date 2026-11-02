@@ -1,0 +1,87 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string &&
+             data.userId == request.auth.uid &&
+             data.name is string && data.name.size() <= 60 &&
+             data.level is string && data.level.size() <= 30 &&
+             data.xp is int && data.xp >= 0 &&
+             data.nairaCoins is int && data.nairaCoins >= 0;
+    }
+
+    function isValidScore(data) {
+      return data.scoreId is string &&
+             data.userId is string &&
+             data.userId == request.auth.uid &&
+             data.gameMode is string && data.gameMode.size() <= 40 &&
+             data.score is int && data.score >= 0;
+    }
+
+    function isValidQuiz(data) {
+      return data.quizId is string &&
+             data.creatorId is string &&
+             data.creatorId == request.auth.uid &&
+             data.title is string && data.title.size() <= 100 &&
+             data.topic is string && data.topic.size() <= 50;
+    }
+
+    // Test connection probe
+    match /test/connection {
+      allow read: if true;
+    }
+
+    // User Profile Documents
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming());
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming()) && incoming().userId == existing().userId;
+      allow delete: if isOwner(userId);
+    }
+
+    // Game Scores & Leaderboards
+    match /scores/{scoreId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && isValidId(scoreId) && isValidScore(incoming());
+      allow update: if isSignedIn() && isValidId(scoreId) && existing().userId == request.auth.uid && isValidScore(incoming()) && incoming().userId == existing().userId;
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    // Custom Community Quizzes
+    match /customQuizzes/{quizId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && isValidId(quizId) && isValidQuiz(incoming());
+      allow update: if isSignedIn() && isValidId(quizId) && existing().creatorId == request.auth.uid && isValidQuiz(incoming()) && incoming().creatorId == existing().creatorId;
+      allow delete: if isSignedIn() && existing().creatorId == request.auth.uid;
+    }
+  }
+}
