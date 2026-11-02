@@ -11,6 +11,7 @@ interface HeaderProps {
   onOpenBadges: () => void;
   onOpenProfile: () => void;
   onOpenInstall?: () => void;
+  onOpenTutor?: () => void;
   onGoHome?: () => void;
 }
 
@@ -21,6 +22,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenBadges,
   onOpenProfile,
   onOpenInstall,
+  onOpenTutor,
   onGoHome
 }) => {
   const [soundOn, setSoundOn] = useState<boolean>(soundManager.isEnabled());
@@ -150,6 +152,19 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="text-sm">📱</span>
                 <span className="hidden md:inline font-bold">Install on Android</span>
                 <span className="md:hidden font-bold">Install</span>
+              </button>
+            )}
+
+            {/* Ask Mr Helton AI Tutor Button */}
+            {onOpenTutor && (
+              <button
+                onClick={onOpenTutor}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-extrabold text-xs shadow-md border border-emerald-400/40 transition hover:scale-105 active:scale-95 cursor-pointer"
+                title="Ask Mr Helton - Mathematics Coach & Step-by-Step Solver"
+              >
+                <span className="text-sm">👨🏾‍🏫</span>
+                <span className="hidden lg:inline font-bold">Ask Mr Helton</span>
+                <span className="lg:hidden font-bold">Mr Helton</span>
               </button>
             )}
 

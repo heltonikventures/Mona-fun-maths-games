@@ -72,6 +72,13 @@ export default function App() {
     setTutorOpen(true);
   };
 
+  const handleOpenGeneralTutor = () => {
+    soundManager.playClick();
+    setTutorQuestion(null);
+    setTutorStudentAnswer(null);
+    setTutorOpen(true);
+  };
+
   const handleSelectGame = (gameId: GameModeId) => {
     soundManager.playClick();
     setActiveGame(gameId);
@@ -183,6 +190,7 @@ export default function App() {
         onOpenBadges={() => setBadgesOpen(true)}
         onOpenProfile={() => setProfileOpen(true)}
         onOpenInstall={() => setInstallOpen(true)}
+        onOpenTutor={handleOpenGeneralTutor}
         onGoHome={() => setActiveGame(null)}
       />
 
@@ -315,11 +323,18 @@ export default function App() {
                     <Flame size={17} className="text-orange-500 fill-orange-500" /> Today's Daily Quest
                   </button>
                   <button
+                    onClick={handleOpenGeneralTutor}
+                    className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-sm shadow-lg shadow-emerald-950/60 hover:scale-102 active:scale-98 transition cursor-pointer"
+                  >
+                    <span>👨🏾‍🏫</span>
+                    <span>Ask Mr Helton (Maths Clinic)</span>
+                  </button>
+                  <button
                     onClick={() => setInstallOpen(true)}
-                    className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-sm shadow-lg shadow-emerald-950/60 border border-emerald-400/40 hover:scale-102 active:scale-98 transition cursor-pointer"
+                    className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-teal-700 to-emerald-800 hover:from-teal-600 hover:to-emerald-700 text-white font-extrabold text-sm shadow-md border border-emerald-400/30 hover:scale-102 active:scale-98 transition cursor-pointer"
                   >
                     <span>📱</span>
-                    <span>Install on Android Phone</span>
+                    <span>Install on Android</span>
                   </button>
                   <button
                     onClick={() => setProfileOpen(true)}
@@ -540,20 +555,12 @@ export default function App() {
         </button>
 
         <button
-          onClick={() => openTutorForQuestion(
-            {
-              question: "How do I solve maths word problems involving Naira and everyday market calculations?",
-              options: [],
-              correctAnswer: "Break the problem down step-by-step and write out the values clearly.",
-              explanation: "Always identify the given amounts, determine whether to add, subtract, multiply, or divide, and double-check your arithmetic.",
-              hint: "Take it one step at a time! Teacher Helton is here to help."
-            },
-            null
-          )}
+          onClick={handleOpenGeneralTutor}
           className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-2xl hover:scale-105 active:scale-95 transition cursor-pointer"
+          title="Ask Mr Helton - Mathematics Coach"
         >
           <span className="text-lg">👨🏾‍🏫</span>
-          <span className="hidden sm:inline">Ask Teacher Helton</span>
+          <span>Ask Mr Helton</span>
         </button>
       </div>
 
@@ -589,6 +596,7 @@ export default function App() {
         question={tutorQuestion}
         studentAnswer={tutorStudentAnswer}
         level={profile.level}
+        onOpenScratchpad={() => setScratchpadOpen(true)}
       />
 
       <InstallAndroidModal

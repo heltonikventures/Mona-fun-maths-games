@@ -54,13 +54,14 @@ export async function askTeacherHelton(
   question: string,
   studentAnswer: string | null,
   correctAnswer: string,
-  level: SchoolLevel
+  level: SchoolLevel,
+  userQuery?: string
 ): Promise<string> {
   try {
     const res = await fetch('/api/tutor-explain', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, studentAnswer, correctAnswer, level }),
+      body: JSON.stringify({ question, studentAnswer, correctAnswer, level, userQuery }),
     });
 
     if (res.ok) {
@@ -73,8 +74,13 @@ export async function askTeacherHelton(
     console.warn('Tutor API fetch failed:', err);
   }
 
-  return `Great effort! Teacher Helton is here to help you solve this:\n\nThe correct answer is **${correctAnswer}**.\nBreak the problem down step-by-step: write out what you know, apply the formula or operation, and double-check your arithmetic. You've got this, maths hero!`;
+  const queryText = userQuery || question;
+  return `Hello champion! I am Mr Helton, your Mathematics Coach.\n\n` +
+    `Regarding "${queryText}":\n` +
+    (correctAnswer && correctAnswer !== 'undefined' ? `The correct answer is **${correctAnswer}**.\n\n` : '\n') +
+    `Always break mathematical questions down step-by-step: list your given numbers, choose the right formula or operation, and verify your steps carefully. Practice makes a true maths champion!`;
 }
 
 // Backward-compatible alias
+export const askMrHelton = askTeacherHelton;
 export const askTeacherFolake = askTeacherHelton;
