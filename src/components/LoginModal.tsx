@@ -8,31 +8,98 @@ import {
   Cloud,
   CheckCircle2,
   Sparkles,
-  Smartphone,
-  Flame,
-  Award,
+  Copy,
+  Check,
+  RefreshCw,
+  Download,
+  Upload,
+  ExternalLink,
+  KeyRound,
+  AlertCircle,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { UserProfile } from '../types';
-import { fetchTopScores, CloudScore } from '../firebase/db';
+import {
+  fetchTopScores,
+  CloudScore,
+  saveLearnerBackupToFirestore,
+  restoreLearnerBackupFromFirestore,
+  getOrCreateCloudSyncCode,
+} from '../firebase/db';
+import { CANONICAL_INSTALL_URL } from './InstallAndroidModal';
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   profile: UserProfile;
+  initialTab?: 'backup' | 'google' | 'leaderboard';
+  onProfileRestored?: (profile: UserProfile) => void;
+}
+
+function formatFriendlyError(err: any): string {
+  if (!err) return 'An unexpected error occurred. Please try again.';
+  const rawMsg = err.message || String(err);
+  try {
+    const parsed = JSON.parse(rawMsg);
+    if (parsed.error) {
+      if (parsed.error.includes('Missing or insufficient permissions')) {
+        return 'Cloud permission check failed. Please ensure your cloud sync code is valid.';
+      }
+      if (parsed.error.includes('offline') || parsed.error.includes('unavailable')) {
+        return 'Network is offline. Your progress is saved locally and will sync once internet is reconnected.';
+      }
+      return parsed.error;
+    }
+  } catch {
+    // Not JSON
+  }
+  if (err.code === 'auth/unauthorized-domain') {
+    return 'This web domain is awaiting authorization in Firebase Console. You can still back up and restore 100% of your progress on any phone or laptop using the Cloud Sync Code tab below!';
+  }
+  if (err.code === 'auth/popup-blocked') {
+    return 'Browser blocked the login popup. Please allow pop-ups for this site, or open Maths Quest in a direct browser tab.';
+  }
+  if (err.code === 'auth/popup-closed-by-user') {
+    return 'Google sign-in was cancelled before completion.';
+  }
+  if (err.code === 'auth/network-request-failed') {
+    return 'Network connection failed. Please check your internet connection.';
+  }
+  return rawMsg;
 }
 
 export const LoginModal: React.FC<LoginModalProps> = ({
   isOpen,
   onClose,
   profile,
+  initialTab = 'backup',
+  onProfileRestored,
 }) => {
-  const { user, loginWithGoogle, logout } = useAuth();
+  const { user, loginWithGoogle, logout, syncProfile } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [backupLoading, setBackupLoading] = useState(false);
+  const [restoreLoading, setRestoreLoading] = useState(false);
+  const [backupSuccess, setBackupSuccess] = useState<string | null>(null);
+  const [restoreSuccess, setRestoreSuccess] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'account' | 'leaderboard'>('account');
+  const [activeTab, setActiveTab] = useState<'backup' | 'google' | 'leaderboard'>(initialTab);
   const [leaderboard, setLeaderboard] = useState<CloudScore[]>([]);
   const [loadingScores, setLoadingScores] = useState<boolean>(false);
+  const [syncCode, setSyncCode] = useState<string>(() =>
+    getOrCreateCloudSyncCode(profile.name)
+  );
+  const [inputCode, setInputCode] = useState<string>('');
+  const [copiedCode, setCopiedCode] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialTab);
+      setSyncCode(getOrCreateCloudSyncCode(profile.name));
+      setErrorMsg(null);
+      setBackupSuccess(null);
+      setRestoreSuccess(null);
+    }
+  }, [isOpen, initialTab, profile.name]);
 
   useEffect(() => {
     if (isOpen && activeTab === 'leaderboard') {
@@ -48,14 +115,73 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleLogin = async () => {
+  // 1-Click Instant Cloud Backup to Firestore
+  const handleInstantCloudBackup = async () => {
+    setBackupLoading(true);
+    setErrorMsg(null);
+    setBackupSuccess(null);
+    try {
+      const res = await saveLearnerBackupToFirestore(profile, syncCode);
+      await syncProfile(profile);
+      setBackupSuccess(`Successfully saved to Firestore cloud at ${new Date(res.timestamp).toLocaleTimeString()}!`);
+      setTimeout(() => setBackupSuccess(null), 6000);
+    } catch (err: any) {
+      console.error('Instant cloud backup error:', err);
+      setErrorMsg(formatFriendlyError(err));
+    } finally {
+      setBackupLoading(false);
+    }
+  };
+
+  // Restore Progress from Cloud Sync Code
+  const handleRestoreFromCode = async () => {
+    const codeToRestore = inputCode.trim().toUpperCase();
+    if (!codeToRestore) return;
+
+    setRestoreLoading(true);
+    setErrorMsg(null);
+    setRestoreSuccess(null);
+    try {
+      const restored = await restoreLearnerBackupFromFirestore(codeToRestore);
+      if (restored) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('mathsquest_profile_v2', JSON.stringify(restored));
+        }
+        if (onProfileRestored) {
+          onProfileRestored(restored);
+        }
+        setRestoreSuccess(`Restored "${restored.name}" (${restored.xp.toLocaleString()} XP, ₦${restored.nairaCoins.toLocaleString()})! Reloading...`);
+        setTimeout(() => {
+          if (typeof window !== 'undefined') {
+            window.location.reload();
+          }
+        }, 1200);
+      } else {
+        setErrorMsg(`No cloud backup found for code "${codeToRestore}". Please check the spelling.`);
+      }
+    } catch (err: any) {
+      setErrorMsg(formatFriendlyError(err));
+    } finally {
+      setRestoreLoading(false);
+    }
+  };
+
+  const handleCopySyncCode = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(syncCode);
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2500);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
     setErrorMsg(null);
     setLoading(true);
     try {
       await loginWithGoogle();
       onClose();
     } catch (err: any) {
-      setErrorMsg(err?.message || 'Login was not completed. Please try again.');
+      setErrorMsg(formatFriendlyError(err));
     } finally {
       setLoading(false);
     }
@@ -66,7 +192,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     try {
       await logout();
     } catch (err: any) {
-      setErrorMsg(err?.message || 'Failed to sign out');
+      setErrorMsg(formatFriendlyError(err));
     } finally {
       setLoading(false);
     }
@@ -74,7 +200,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg bg-slate-900 border-2 border-indigo-500/50 rounded-3xl shadow-2xl shadow-indigo-950/70 text-white p-5 sm:p-7 overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-lg bg-slate-900 border-2 border-indigo-500/50 rounded-3xl shadow-2xl shadow-indigo-950/70 text-white p-5 sm:p-7 overflow-hidden flex flex-col max-h-[92vh]">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -86,54 +212,199 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         {/* Modal Header */}
         <div className="flex items-center gap-3.5 mb-5">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-amber-500 flex items-center justify-center text-2xl shadow-lg ring-2 ring-indigo-400/30 shrink-0">
-            {user ? '👑' : '🔐'}
+            {user ? '👑' : '☁️'}
           </div>
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
-                Cloud Database & Auth
+                Cloud Database Active
               </span>
-              {user && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Synced
-                </span>
-              )}
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Firestore Online
+              </span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-white mt-1">
-              {user ? 'Learner Account & Cloud Sync' : 'Sign In to Maths Quest'}
+              Cloud Backup & Login
             </h2>
           </div>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-2 bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800 mb-5">
+        <div className="flex items-center gap-1.5 bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800 mb-5">
           <button
-            onClick={() => setActiveTab('account')}
-            className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 ${
-              activeTab === 'account'
+            onClick={() => setActiveTab('backup')}
+            className={`flex-1 py-2 px-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 ${
+              activeTab === 'backup'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Cloud size={14} />
+            <span>Cloud Backup</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('google')}
+            className={`flex-1 py-2 px-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 ${
+              activeTab === 'google'
                 ? 'bg-indigo-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <ShieldCheck size={14} />
-            <span>Account & Sync</span>
+            <span>Google Account</span>
           </button>
           <button
             onClick={() => setActiveTab('leaderboard')}
-            className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`flex-1 py-2 px-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 ${
               activeTab === 'leaderboard'
                 ? 'bg-indigo-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <Trophy size={14} />
-            <span>Global Leaderboard</span>
+            <span>Leaderboard</span>
           </button>
         </div>
 
-        {/* Tab 1: Account & Login */}
-        {activeTab === 'account' && (
+        {/* Global Error Banner */}
+        {errorMsg && (
+          <div className="mb-4 p-3 rounded-2xl bg-rose-950/60 border border-rose-500/50 text-rose-200 text-xs flex items-start gap-2">
+            <AlertCircle size={16} className="text-rose-400 shrink-0 mt-0.5" />
+            <p className="leading-relaxed">{errorMsg}</p>
+          </div>
+        )}
+
+        {/* Tab 1: Instant Cloud Backup & Restore */}
+        {activeTab === 'backup' && (
+          <div className="space-y-4 overflow-y-auto custom-scrollbar pr-1">
+            {/* Quick Backup Action Card */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-indigo-950/80 via-slate-900 to-purple-950/80 border border-indigo-500/40 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-black text-white flex items-center gap-1.5">
+                    <Sparkles size={15} className="text-amber-400" />
+                    1-Click Cloud Database Save
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-0.5">
+                    Saves all XP, Naira coins, adventure stages & badges to Firestore.
+                  </p>
+                </div>
+              </div>
+
+              {/* Progress Summary Pills */}
+              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                <div className="p-2 rounded-xl bg-slate-900/80 border border-slate-700">
+                  <p className="text-[10px] text-slate-400">Total XP</p>
+                  <p className="font-black text-amber-300 text-sm">{profile.xp.toLocaleString()}</p>
+                </div>
+                <div className="p-2 rounded-xl bg-slate-900/80 border border-slate-700">
+                  <p className="text-[10px] text-slate-400">Naira Coins</p>
+                  <p className="font-black text-emerald-400 text-sm">₦{profile.nairaCoins.toLocaleString()}</p>
+                </div>
+                <div className="p-2 rounded-xl bg-slate-900/80 border border-slate-700">
+                  <p className="text-[10px] text-slate-400">Stars</p>
+                  <p className="font-black text-yellow-400 text-sm">⭐ {profile.stars || 0}</p>
+                </div>
+              </div>
+
+              {backupSuccess && (
+                <div className="p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500/50 text-emerald-300 text-xs flex items-center gap-2">
+                  <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                  <span>{backupSuccess}</span>
+                </div>
+              )}
+
+              <button
+                onClick={handleInstantCloudBackup}
+                disabled={backupLoading}
+                className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-green-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+              >
+                {backupLoading ? (
+                  <RefreshCw size={17} className="animate-spin" />
+                ) : (
+                  <>
+                    <Upload size={16} />
+                    <span>Back Up My Progress to Cloud Now</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Learner Cloud Sync Code */}
+            <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <KeyRound size={13} className="text-amber-400" /> Your Cloud Sync Code:
+                </span>
+                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                  Device Key
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={syncCode}
+                  className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-emerald-300 select-all focus:outline-none"
+                />
+                <button
+                  onClick={handleCopySyncCode}
+                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center gap-1.5 border border-slate-600 transition cursor-pointer"
+                >
+                  {copiedCode ? (
+                    <>
+                      <Check size={14} className="text-emerald-400" />
+                      <span className="text-emerald-400">Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={14} />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Save this code! You can use it on any Android phone, tablet, or laptop to restore your exact progress.
+              </p>
+            </div>
+
+            {/* Restore from Sync Code */}
+            <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2.5">
+              <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Download size={13} className="text-indigo-400" /> Restore From Another Device:
+              </span>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Enter Cloud Sync Code (e.g. MQ-HERO-1234)"
+                  value={inputCode}
+                  onChange={(e) => setInputCode(e.target.value.toUpperCase())}
+                  className="flex-1 bg-slate-900 border border-slate-700 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs font-mono text-white placeholder-slate-500 uppercase focus:outline-none"
+                />
+                <button
+                  onClick={handleRestoreFromCode}
+                  disabled={restoreLoading || !inputCode.trim()}
+                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-xs transition cursor-pointer flex items-center gap-1"
+                >
+                  {restoreLoading ? <RefreshCw size={13} className="animate-spin" /> : <span>Restore</span>}
+                </button>
+              </div>
+              {restoreSuccess && (
+                <div className="p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500/50 text-emerald-300 text-xs flex items-center gap-2 mt-2">
+                  <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                  <span>{restoreSuccess}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 2: Google Account Login */}
+        {activeTab === 'google' && (
           <div className="space-y-4 overflow-y-auto custom-scrollbar pr-1">
             {user ? (
               /* Signed In State */
@@ -159,76 +430,50 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                     </div>
                     <p className="text-xs text-emerald-200/80 truncate">{user.email}</p>
                     <p className="text-[10px] text-slate-400 mt-0.5">
-                      UID: <span className="font-mono text-slate-300">{user.uid.slice(0, 10)}...</span>
+                      Google Account Connected
                     </p>
                   </div>
                 </div>
 
-                {/* Cloud Sync Stats Card */}
-                <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3">
+                <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Cloud size={14} className="text-indigo-400" /> Cloud Backup Status
+                      <Cloud size={14} className="text-indigo-400" /> Auto-Sync Active
                     </span>
                     <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-                      Live Firestore Active
+                      /users/{user.uid.slice(0, 6)}...
                     </span>
                   </div>
-
-                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                    <div className="p-2 rounded-xl bg-slate-800/60 border border-slate-700">
-                      <p className="text-[10px] text-slate-400">Total XP</p>
-                      <p className="font-black text-amber-300 text-sm">{profile.xp.toLocaleString()}</p>
-                    </div>
-                    <div className="p-2 rounded-xl bg-slate-800/60 border border-slate-700">
-                      <p className="text-[10px] text-slate-400">Naira Coins</p>
-                      <p className="font-black text-emerald-400 text-sm">₦{profile.nairaCoins.toLocaleString()}</p>
-                    </div>
-                    <div className="p-2 rounded-xl bg-slate-800/60 border border-slate-700">
-                      <p className="text-[10px] text-slate-400">Stars</p>
-                      <p className="font-black text-yellow-400 text-sm">⭐ {profile.stars || 0}</p>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    Your learning stats, unlocked badges ({profile.badges.length}), and purchased items are safely saved in the cloud. You can switch devices anytime and keep playing!
+                  <p className="text-xs text-slate-300">
+                    Your levels, coins, and leaderboard scores are automatically synced to your Google Account document in Firestore.
                   </p>
                 </div>
 
-                {/* Sign Out Button */}
                 <button
                   onClick={handleLogout}
                   disabled={loading}
                   className="w-full py-3 px-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-rose-300 hover:text-rose-200 font-bold text-xs flex items-center justify-center gap-2 border border-slate-700 transition cursor-pointer"
                 >
                   <LogOut size={15} />
-                  <span>Sign Out of Account</span>
+                  <span>Sign Out of Google Account</span>
                 </button>
               </div>
             ) : (
-              /* Guest / Not Logged In State */
+              /* Signed Out State */
               <div className="space-y-4">
                 <div className="p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/40 space-y-2">
                   <h3 className="font-bold text-sm text-indigo-200 flex items-center gap-1.5">
                     <Sparkles size={16} className="text-amber-400" />
-                    Why Sign In with Google?
+                    Sign In with Google
                   </h3>
-                  <ul className="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
-                    <li><strong>Save Progress Forever:</strong> Never lose your XP, coins, and levels when clearing cookies or updating your phone.</li>
-                    <li><strong>Cross-Device Play:</strong> Play on your computer at school and continue on Android phone at home.</li>
-                    <li><strong>Global Leaderboard:</strong> Compete with other learners across Nigeria and the world!</li>
-                  </ul>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Connect your Google account to automatically preserve your coins, levels, and rank across devices forever.
+                  </p>
                 </div>
-
-                {errorMsg && (
-                  <div className="p-3 rounded-xl bg-rose-950/60 border border-rose-500/50 text-rose-300 text-xs">
-                    {errorMsg}
-                  </div>
-                )}
 
                 {/* Google Sign In Button */}
                 <button
-                  onClick={handleLogin}
+                  onClick={handleGoogleLogin}
                   disabled={loading}
                   className="w-full py-3.5 px-6 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-sm shadow-xl shadow-white/10 flex items-center justify-center gap-3 transition hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                 >
@@ -253,15 +498,25 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   <span>{loading ? 'Connecting to Google...' : 'Continue with Google Account'}</span>
                 </button>
 
-                <p className="text-[11px] text-slate-400 text-center">
-                  🔒 Safe & secure authentication powered by Google Firebase. Zero passwords to remember!
-                </p>
+                {/* Open in Direct Browser for iframe compatibility */}
+                <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 text-xs flex items-center justify-between gap-2">
+                  <span className="text-slate-400">If popup is blocked in preview:</span>
+                  <a
+                    href={CANONICAL_INSTALL_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-indigo-400 hover:text-indigo-300 font-bold flex items-center gap-1 underline"
+                  >
+                    <span>Open in Direct Tab</span>
+                    <ExternalLink size={12} />
+                  </a>
+                </div>
               </div>
             )}
           </div>
         )}
 
-        {/* Tab 2: Global Leaderboard */}
+        {/* Tab 3: Global Leaderboard */}
         {activeTab === 'leaderboard' && (
           <div className="space-y-3 overflow-y-auto custom-scrollbar flex-1 pr-1">
             <div className="flex items-center justify-between text-xs text-slate-400 px-1">

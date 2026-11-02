@@ -18,7 +18,7 @@ service cloud.firestore {
     }
 
     function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+      return id is string && id.size() <= 128;
     }
 
     function incoming() {
@@ -32,10 +32,10 @@ service cloud.firestore {
     function isValidUserProfile(data) {
       return data.userId is string &&
              data.userId == request.auth.uid &&
-             data.name is string && data.name.size() <= 60 &&
-             data.level is string && data.level.size() <= 30 &&
-             data.xp is int && data.xp >= 0 &&
-             data.nairaCoins is int && data.nairaCoins >= 0;
+             data.name is string && data.name.size() <= 120 &&
+             data.level is string && data.level.size() <= 40 &&
+             (data.xp is int || data.xp is number) && data.xp >= 0 &&
+             (data.nairaCoins is int || data.nairaCoins is number) && data.nairaCoins >= 0;
     }
 
     function isValidScore(data) {
@@ -43,7 +43,7 @@ service cloud.firestore {
              data.userId is string &&
              data.userId == request.auth.uid &&
              data.gameMode is string && data.gameMode.size() <= 40 &&
-             data.score is int && data.score >= 0;
+             (data.score is int || data.score is number) && data.score >= 0;
     }
 
     function isValidQuiz(data) {
@@ -54,18 +54,32 @@ service cloud.firestore {
              data.topic is string && data.topic.size() <= 50;
     }
 
+    function isValidBackup(data) {
+      return data.backupCode is string && data.backupCode.size() <= 64 &&
+             data.name is string && data.name.size() <= 120 &&
+             data.level is string && data.level.size() <= 40 &&
+             (data.xp is int || data.xp is number) && data.xp >= 0 &&
+             (data.nairaCoins is int || data.nairaCoins is number) && data.nairaCoins >= 0;
+    }
+
     // Test connection probe
     match /test/connection {
       allow read: if true;
     }
 
-    // User Profile Documents
+    // User Profile Documents (Private to Owner)
     match /users/{userId} {
       allow get: if isOwner(userId);
       allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming());
-      allow update: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming()) && incoming().userId == existing().userId;
+      allow create, update: if isOwner(userId) && isValidUserProfile(incoming());
       allow delete: if isOwner(userId);
+    }
+
+    // 1-Click Cloud Backups (Universal Sync by Learner Backup Code)
+    match /backups/{backupCode} {
+      allow get: if true;
+      allow create, update: if isValidId(backupCode) && isValidBackup(incoming());
+      allow delete: if false;
     }
 
     // Game Scores & Leaderboards

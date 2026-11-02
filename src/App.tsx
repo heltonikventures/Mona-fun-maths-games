@@ -55,6 +55,12 @@ export default function App() {
   const [badgesOpen, setBadgesOpen] = useState<boolean>(false);
   const [installOpen, setInstallOpen] = useState<boolean>(false);
   const [loginOpen, setLoginOpen] = useState<boolean>(false);
+  const [loginTab, setLoginTab] = useState<'backup' | 'google' | 'leaderboard'>('backup');
+
+  const handleOpenLogin = (tab: 'backup' | 'google' | 'leaderboard' = 'backup') => {
+    setLoginTab(tab);
+    setLoginOpen(true);
+  };
 
   // AI Tutor Modal
   const [tutorOpen, setTutorOpen] = useState<boolean>(false);
@@ -203,7 +209,7 @@ export default function App() {
           onOpenProfile={() => setProfileOpen(true)}
           onOpenInstall={() => setInstallOpen(true)}
           onOpenTutor={handleOpenGeneralTutor}
-          onOpenLogin={() => setLoginOpen(true)}
+          onOpenLogin={handleOpenLogin}
           onGoHome={() => setActiveGame(null)}
         />
 
@@ -350,11 +356,11 @@ export default function App() {
                     <span>Install on Android</span>
                   </button>
                   <button
-                    onClick={() => setLoginOpen(true)}
+                    onClick={() => handleOpenLogin('backup')}
                     className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-extrabold text-sm shadow-md transition hover:scale-102 active:scale-98 cursor-pointer"
                   >
-                    <span>🔐</span>
-                    <span>Sign In & Cloud Save</span>
+                    <span>☁️</span>
+                    <span>Cloud Backup & Sync</span>
                   </button>
                   <button
                     onClick={() => setProfileOpen(true)}
@@ -383,22 +389,29 @@ export default function App() {
                       Cloud Database & Global Leaderboard
                     </h3>
                     <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
-                      Firebase Firestore & Auth
+                      Firebase Firestore Active
                     </span>
                   </div>
                   <p className="text-xs sm:text-sm text-slate-300 mt-1">
-                    Sign in with Google to automatically back up your stars, XP, and Naira coins, and showcase your rank on the live Maths Quest leaderboard!
+                    1-Click Cloud Save preserves your stars, XP, and Naira coins across devices, and showcases your rank on the live Firestore leaderboard!
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
                 <button
-                  onClick={() => setLoginOpen(true)}
-                  className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-black text-sm shadow-xl shadow-indigo-500/30 hover:scale-105 active:scale-95 transition cursor-pointer"
+                  onClick={() => handleOpenLogin('backup')}
+                  className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm shadow-xl shadow-emerald-500/20 hover:scale-105 active:scale-95 transition cursor-pointer"
+                >
+                  <span>☁️</span>
+                  <span>Cloud Backup</span>
+                </button>
+                <button
+                  onClick={() => handleOpenLogin('leaderboard')}
+                  className="flex-1 md:flex-initial flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-black text-sm shadow-xl shadow-indigo-500/30 hover:scale-105 active:scale-95 transition cursor-pointer"
                 >
                   <span>🏆</span>
-                  <span>Leaderboard & Account</span>
+                  <span>Leaderboard</span>
                 </button>
               </div>
             </div>
@@ -598,6 +611,15 @@ export default function App() {
       {/* Floating Action Buttons */}
       <div className="fixed bottom-4 right-4 z-30 flex flex-col sm:flex-row items-end sm:items-center gap-2">
         <button
+          onClick={() => handleOpenLogin('backup')}
+          className="flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-slate-900/95 hover:bg-slate-800 text-indigo-300 font-extrabold text-xs shadow-2xl border border-indigo-500/50 hover:scale-105 active:scale-95 transition backdrop-blur-md cursor-pointer"
+          title="1-Click Cloud Save & Backup Progress"
+        >
+          <span className="text-base">☁️</span>
+          <span>Cloud Save</span>
+        </button>
+
+        <button
           onClick={() => setInstallOpen(true)}
           className="flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-slate-900/90 hover:bg-slate-800 text-emerald-400 font-extrabold text-xs shadow-2xl border border-emerald-500/50 hover:scale-105 active:scale-95 transition backdrop-blur-md cursor-pointer"
           title="Install on Android Phone"
@@ -634,7 +656,7 @@ export default function App() {
         onClose={() => setProfileOpen(false)}
         profile={profile}
         onUpdateProfile={handleUpdateProfile}
-        onOpenLogin={() => setLoginOpen(true)}
+        onOpenLogin={() => handleOpenLogin('google')}
       />
 
       <BadgesModal
@@ -661,6 +683,10 @@ export default function App() {
         isOpen={loginOpen}
         onClose={() => setLoginOpen(false)}
         profile={profile}
+        initialTab={loginTab}
+        onProfileRestored={(restored) => {
+          setProfile(restored);
+        }}
       />
     </div>
   </AuthProvider>

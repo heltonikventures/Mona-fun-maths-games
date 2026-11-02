@@ -14,7 +14,7 @@ interface HeaderProps {
   onOpenProfile: () => void;
   onOpenInstall?: () => void;
   onOpenTutor?: () => void;
-  onOpenLogin?: () => void;
+  onOpenLogin?: (tab?: 'backup' | 'google' | 'leaderboard') => void;
   onGoHome?: () => void;
 }
 
@@ -71,16 +71,17 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-2 sm:gap-2.5">
           {/* Cloud Sync Status (from Mona Maths) */}
           <button
-            onClick={onOpenLogin}
-            className={`hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition cursor-pointer ${
+            onClick={() => onOpenLogin?.('backup')}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition cursor-pointer ${
               user
                 ? 'bg-emerald-950/60 hover:bg-emerald-900/60 border-emerald-500/40 text-emerald-300'
-                : 'bg-slate-800/80 hover:bg-slate-700 border-slate-700 text-slate-300'
+                : 'bg-indigo-950/70 hover:bg-indigo-900/80 border-indigo-500/40 text-indigo-200'
             }`}
-            title={user ? `Signed in as ${user.displayName || user.email} • Click to view cloud data` : 'Click to Sign In with Google and save progress to Cloud'}
+            title={user ? `Signed in as ${user.displayName || user.email} • Click to view cloud data` : 'Click to Back Up Progress to Cloud or Sign In'}
           >
-            <span className={`w-2 h-2 rounded-full ${user ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
-            <span>{user ? 'Cloud Synced' : 'Cloud Backup'}</span>
+            <span className={`w-2 h-2 rounded-full ${user ? 'bg-emerald-400 animate-pulse' : 'bg-emerald-400'}`} />
+            <span className="hidden sm:inline">{user ? 'Cloud Synced' : 'Cloud Backup'}</span>
+            <span className="sm:hidden">{user ? 'Synced' : 'Backup'}</span>
             <span>☁️</span>
           </button>
 
@@ -194,7 +195,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Account / Login Button */}
             {user ? (
               <button
-                onClick={onOpenLogin}
+                onClick={() => onOpenLogin?.('google')}
                 className="flex items-center gap-1.5 pl-1.5 pr-2.5 py-1 bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-500/50 rounded-xl transition cursor-pointer"
                 title="Account Synced • Click to view Leaderboard and Account"
               >
@@ -210,7 +211,7 @@ export const Header: React.FC<HeaderProps> = ({
             ) : (
               onOpenLogin && (
                 <button
-                  onClick={onOpenLogin}
+                  onClick={() => onOpenLogin?.('google')}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-extrabold text-xs shadow-md border border-indigo-400/40 transition hover:scale-105 active:scale-95 cursor-pointer"
                   title="Sign in with Google to save progress in cloud database & leaderboard"
                 >

@@ -1,12 +1,24 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
+import {
+  User,
+  onAuthStateChanged,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  signOut,
+} from 'firebase/auth';
 import { auth, googleProvider } from '../firebase/config';
-import { fetchProfileFromFirestore, saveProfileToFirestore } from '../firebase/db';
+import {
+  fetchProfileFromFirestore,
+  saveProfileToFirestore,
+  getOrCreateCloudSyncCode,
+} from '../firebase/db';
 import { UserProfile } from '../types';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  cloudSyncCode: string;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   syncProfile: (profile: UserProfile) => Promise<void>;
@@ -16,6 +28,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
+  cloudSyncCode: '',
   loginWithGoogle: async () => {},
   logout: async () => {},
   syncProfile: async () => {},
@@ -36,23 +49,45 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [cloudSyncCode, setCloudSyncCode] = useState<string>(() =>
+    getOrCreateCloudSyncCode(currentProfile.name)
+  );
 
   useEffect(() => {
+    // Check if returning from redirect sign-in
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result?.user) {
+          setUser(result.user);
+          const cloudProfile = await fetchProfileFromFirestore(result.user.uid);
+          if (cloudProfile) {
+            onProfileLoaded(cloudProfile);
+          } else {
+            const initial: UserProfile = {
+              ...currentProfile,
+              name: result.user.displayName || currentProfile.name,
+            };
+            await saveProfileToFirestore(initial);
+            onProfileLoaded(initial);
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn('Redirect sign-in check:', err?.message || err);
+      });
+
+    // Listen to Auth State Changes
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
         try {
-          // Attempt to load cloud profile
           const cloudProfile = await fetchProfileFromFirestore(currentUser.uid);
           if (cloudProfile) {
-            // Restore cloud profile to learner
             onProfileLoaded(cloudProfile);
           } else {
-            // First time login: back up local guest profile to Firestore!
             const newCloudProfile: UserProfile = {
               ...currentProfile,
               name: currentUser.displayName || currentProfile.name,
-              avatar: currentProfile.avatar || '⭐',
             };
             await saveProfileToFirestore(newCloudProfile);
             onProfileLoaded(newCloudProfile);
@@ -72,7 +107,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       const result = await signInWithPopup(auth, googleProvider);
       if (result.user) {
         setUser(result.user);
-        // Sync or restore profile
         const cloudProfile = await fetchProfileFromFirestore(result.user.uid);
         if (cloudProfile) {
           onProfileLoaded(cloudProfile);
@@ -87,10 +121,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       }
     } catch (error: any) {
       if (error?.code === 'auth/popup-closed-by-user') {
-        console.log('Login popup was closed by student/user');
         return;
       }
-      console.error('Google Sign-In Error:', error);
+      console.warn('Google Sign-In Attempt:', error?.code || error?.message);
       throw error;
     }
   };
@@ -105,12 +138,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   };
 
   const syncProfile = async (profile: UserProfile) => {
-    if (user) {
-      try {
-        await saveProfileToFirestore(profile);
-      } catch (err) {
-        console.warn('Failed to sync profile to cloud:', err);
-      }
+    try {
+      await saveProfileToFirestore(profile);
+      setCloudSyncCode(getOrCreateCloudSyncCode(profile.name));
+    } catch (err) {
+      console.warn('Failed to sync profile to cloud:', err);
     }
   };
 
@@ -119,6 +151,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       value={{
         user,
         loading,
+        cloudSyncCode,
         loginWithGoogle,
         logout,
         syncProfile,

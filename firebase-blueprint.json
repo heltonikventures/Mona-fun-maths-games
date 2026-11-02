@@ -12,7 +12,7 @@
         "name": {
           "type": "string",
           "description": "Display name of the learner",
-          "maxLength": 60
+          "maxLength": 120
         },
         "avatar": {
           "type": "string",
@@ -22,7 +22,7 @@
         "level": {
           "type": "string",
           "description": "School level, e.g., Primary 1-6, JSS 1-3, SS 1-3",
-          "maxLength": 30
+          "maxLength": 40
         },
         "xp": {
           "type": "integer",
@@ -40,7 +40,7 @@
           "type": "integer",
           "description": "Current consecutive active day streak"
         },
-        "lastActiveDate": {
+        "lastPlayedDate": {
           "type": "string",
           "description": "ISO date string of last active session",
           "maxLength": 40
@@ -49,17 +49,9 @@
           "type": "array",
           "description": "List of unlocked badge identifiers"
         },
-        "inventory": {
-          "type": "array",
-          "description": "List of purchased shop item identifiers"
-        },
-        "gamesPlayed": {
+        "unlockedAdventureStages": {
           "type": "integer",
-          "description": "Total game sessions completed"
-        },
-        "correctAnswers": {
-          "type": "integer",
-          "description": "Total correct math answers answered"
+          "description": "Highest unlocked adventure island stage"
         },
         "updatedAt": {
           "type": "string",
@@ -68,6 +60,55 @@
         }
       },
       "required": ["userId", "name", "level", "xp", "nairaCoins"]
+    },
+    "LearnerBackup": {
+      "title": "LearnerBackup",
+      "description": "1-Click Cloud Backup snapshot retrievable via unique sync code.",
+      "type": "object",
+      "properties": {
+        "backupCode": {
+          "type": "string",
+          "description": "Unique 6 to 12 character sync code",
+          "maxLength": 64
+        },
+        "name": {
+          "type": "string",
+          "description": "Student nickname or name",
+          "maxLength": 120
+        },
+        "level": {
+          "type": "string",
+          "description": "School level",
+          "maxLength": 40
+        },
+        "xp": {
+          "type": "integer",
+          "description": "Total experience points"
+        },
+        "nairaCoins": {
+          "type": "integer",
+          "description": "Naira coins balance"
+        },
+        "stars": {
+          "type": "integer",
+          "description": "Total stars"
+        },
+        "streak": {
+          "type": "integer",
+          "description": "Streak"
+        },
+        "avatar": {
+          "type": "string",
+          "description": "Avatar character",
+          "maxLength": 10
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of backup creation",
+          "maxLength": 40
+        }
+      },
+      "required": ["backupCode", "name", "level", "xp", "nairaCoins"]
     },
     "GameScore": {
       "title": "GameScore",
@@ -172,6 +213,10 @@
     "/users/{userId}": {
       "schema": "UserProfile",
       "description": "Learner profile document owned by the authenticated student."
+    },
+    "/backups/{backupCode}": {
+      "schema": "LearnerBackup",
+      "description": "Universal cloud backup retrievable across all devices via sync code."
     },
     "/scores/{scoreId}": {
       "schema": "GameScore",
